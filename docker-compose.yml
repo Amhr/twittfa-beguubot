@@ -1,0 +1,72 @@
+version: "3"
+services:
+  go:
+    build: ./
+    ports:
+      - 8080:8080
+      - 1234:1234
+    volumes:
+      - ./:/app
+    environment:
+      - REDIS_ADDRESS=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWD=${MARIADB_PASSWD}
+    links:
+      - redis:redis
+      - mariadb:mariadb
+  redis:
+    image: redis
+    container_name: beguubot_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+
+  mariadb:
+    image: mariadb
+    container_name: beguubot_mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWD}
+      MYSQL_DATABASE: ${MARIADB_DATABASE}
+      MYSQL_USER: ${MARIADB_USER}
+      MYSQL_PASSWORD: ${MARIADB_PASSWD}
+    logging:
+      driver: syslog
+      options:
+        tag: "{{.DaemonName}}(image={{.ImageName}};name={{.Name}};id={{.ID}})"
+    restart: on-failure
+    volumes:
+      - ${PWD}/data/mariadb:/var/lib/mysql
+
+  prometheus:
+    image: 'prom/prometheus:latest'
+    container_name: beguubot_prometheus
+    links:
+      - go:go
+    volumes:
+      - './config/prometheus.yml:/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: beguubot_grafana
+    restart: unless-stopped
+    ports:
+      - 9090:9090
+      - 3000:3000
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    links:
+      - prometheus:prometheus
+  pma:
+    depends_on:
+      - mariadb
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - '8081:80'
+    environment:
+      PMA_HOST: mariadb
+
+

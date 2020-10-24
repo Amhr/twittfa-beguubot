@@ -1,0 +1,15 @@
+stats:
+  prometheus:
+    enabled: true
+    port: 1234
+  statsd:
+    enabled: false
+    port: 5678
+    host: "w.x.y.z"
+  namespace: bot
+  system-name: beguubot
+
+dev: true
+BOT_TOKEN: 1323497313:AAExZW3IqHxWo5hvWh6KB-vnWC4pX1lHF-A
+BOT_NAME: BeguuBot
+WORKERS: 10

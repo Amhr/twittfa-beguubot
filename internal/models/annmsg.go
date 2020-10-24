@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	context2 "github.com/amhr/begubot/internal/context"
 	"github.com/amhr/begubot/internal/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -13,14 +14,16 @@ import (
 )
 
 type Annmsg struct {
-	Type    string
-	Data    string
-	Caption string
-	FromId  int
-	ToId    int
-	ID      int
-	ReplyTo int
-	Status  int
+	Type              string
+	Data              string
+	Caption           string
+	FromId            int
+	ToId              int
+	ID                int
+	ReplyTo           int
+	Status            int
+	SenderMessageID   int
+	RecieverMessageID int
 }
 
 type DBAnnmsg struct {
@@ -47,12 +50,15 @@ func (d *DBAnnmsg) ToMessage() *Annmsg {
 }
 
 func (m *Annmsg) SaveCache(c *redis.RedisCache) error {
+	key := c.Key("annmsg", strconv.Itoa(m.ID))
 	b, err := json.Marshal(m)
 	if err != nil {
 		logrus.WithField("action", "SaveAnnmsgMarshal").Error(err)
 		return err
 	}
-	c.Set(c.Key("annmsg", strconv.Itoa(m.ID)), string(b), time.Duration(24*7)*time.Hour, context.Background())
+	c.Set(key, string(b), time.Duration(24*7)*time.Hour, context.Background())
+	fmt.Println("Saving Cache ", key)
+	fmt.Println("Value  ", m)
 	return nil
 }
 
@@ -70,11 +76,17 @@ func NewAnnmsg(t, d, c string, fromId, toId int, replyTo int) *Annmsg {
 
 func GetMessage(msgId int, c *context2.ModelContext) *Annmsg {
 	annmsg := &Annmsg{}
-	cacheKey := c.Redis.Key("annmsg", strconv.Itoa(annmsg.ID))
+	if msgId == 0 {
+		return annmsg
+	}
+	cacheKey := c.Redis.Key("annmsg", strconv.Itoa(msgId))
 	d := c.Redis.Get(cacheKey, "", context.Background())
-	if e := json.Unmarshal([]byte(d), annmsg); e != nil && annmsg.ID == msgId {
+	fmt.Println(cacheKey, d)
+	if e := json.Unmarshal([]byte(d), annmsg); e == nil {
+		fmt.Println("Get Msg From Cache")
 		return annmsg
 	} else {
+		fmt.Println("Get Msg From DB")
 		dbannmsg := &DBAnnmsg{}
 		e := c.DB.Where("id=?", msgId).Take(dbannmsg)
 		if e.Error != nil {

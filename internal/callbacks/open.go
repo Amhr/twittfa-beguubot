@@ -50,11 +50,8 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 
 	// send message seen feedback
 	otherUser := u.GetUserBy("db", msg.FromId)
-	r, err := c.Bot.Send(models.SendMessage(msg, int64(otherUser.TelegramID), nil, 0))
-	if err == nil {
-		feedbackSendable := tgbotapi.NewMessage(int64(otherUser.TelegramID), "👀 این پیام ات رو دید.")
-		feedbackSendable.ReplyToMessageID = r.MessageID
-		_, err = c.Bot.Send(feedbackSendable)
-	}
+	feedbackSendable := tgbotapi.NewMessage(int64(otherUser.TelegramID), "👀 این پیام ات رو دید.")
+	feedbackSendable.ReplyToMessageID = msg.SenderMessageID
+	c.Bot.Send(feedbackSendable)
 
 }

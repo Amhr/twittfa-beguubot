@@ -10,6 +10,7 @@ import (
 	viper2 "github.com/amhr/begubot/internal/viper"
 	"github.com/cafebazaar/epimetheus"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"os"
 )
 
 func main() {
@@ -30,7 +31,7 @@ func main() {
 
 	// telegram bot
 
-	bot, err := tgbotapi.NewBotAPI(v.Get("BOT_TOKEN").(string))
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		panic(err)
 	}

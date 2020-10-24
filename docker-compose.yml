@@ -3,7 +3,7 @@ services:
   go:
     build: ./
     ports:
-      - 8080:8080
+      - ${PORT_EPIMETHEUS}:8080
       - 1234:1234
     volumes:
       - ./:/app
@@ -13,6 +13,8 @@ services:
       - MARIADB_DATABASE=${MARIADB_DATABASE}
       - MARIADB_USER=${MARIADB_USER}
       - MARIADB_PASSWD=${MARIADB_PASSWD}
+      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_NAME=${BOT_NAME}
     links:
       - redis:redis
       - mariadb:mariadb
@@ -65,7 +67,7 @@ services:
     image: phpmyadmin/phpmyadmin
     restart: always
     ports:
-      - '8081:80'
+      - ${PORT_PMA}:80
     environment:
       PMA_HOST: mariadb
 

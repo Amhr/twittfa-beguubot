@@ -10,6 +10,4 @@ stats:
   system-name: beguubot
 
 dev: true
-BOT_TOKEN: 1323497313:AAExZW3IqHxWo5hvWh6KB-vnWC4pX1lHF-A
-BOT_NAME: BeguuBot
 WORKERS: 10

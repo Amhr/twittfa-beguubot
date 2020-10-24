@@ -29,6 +29,7 @@ func (l LocationStart) Run(u *models.UserManager, up *tgbotapi.Update) {
 		identifier := cmd[1]
 		expIdent := strings.Split(identifier, "_")
 		if len(expIdent) == 2 {
+			u.ClearCache()
 			u.SetCache("annmsg_id", expIdent[0])
 			u.SetLocation("annmsg")
 			u.SetStep("1")

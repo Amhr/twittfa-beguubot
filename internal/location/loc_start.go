@@ -5,6 +5,7 @@ import (
 	"github.com/amhr/begubot/internal/keyboards"
 	"github.com/amhr/begubot/internal/models"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"strconv"
 	"strings"
 )
 
@@ -29,6 +30,15 @@ func (l LocationStart) Run(u *models.UserManager, up *tgbotapi.Update) {
 		identifier := cmd[1]
 		expIdent := strings.Split(identifier, "_")
 		if len(expIdent) == 2 {
+
+			if expIdent[0] == strconv.Itoa(u.UserMessage.DatabaseID) {
+				c := tgbotapi.NewMessage(u.ID64(), `وارد لینک خودت شدی :)
+لینک رو برای دوستات بفرست تا اون ها برات پیام بفرستن.`)
+				c.ReplyMarkup = keyboards.HomeKeyboard()
+				l.bot.Send(c)
+				return
+			}
+
 			u.ClearCache()
 			u.SetCache("annmsg_id", expIdent[0])
 			u.SetLocation("annmsg")

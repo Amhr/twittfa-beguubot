@@ -48,6 +48,8 @@ func (b *BeguuBot) HandleCallback(u *tgbotapi.Update) {
 		callbacks.SendCallback(currentUser, u, context.NewContextModel(b.DB, b.Cache, b.Bot), exp)
 	case "delete":
 		callbacks.DeleteCallback(currentUser, u, context.NewContextModel(b.DB, b.Cache, b.Bot), exp)
+	case "home":
+		callbacks.HomeCallback(currentUser, u, context.NewContextModel(b.DB, b.Cache, b.Bot), exp)
 
 	}
 

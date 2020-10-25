@@ -63,6 +63,14 @@ func (u *UserManager) SetLocation(loc string) {
 }
 
 func (u *UserManager) ClearCache() {
+	msgs := u.GetWaitingMsgs()
+	for _, msgId := range msgs {
+		msg := GetMessage(msgId, u.ContextModel)
+		if msg != nil {
+			msg.Cancel(u)
+		}
+	}
+	u.SetWaitingMsgs([]int{})
 	u.SetLocation("home")
 	u.SetStep("1")
 	u.SetCache("annmsg_id", "")

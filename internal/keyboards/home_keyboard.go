@@ -46,7 +46,10 @@ func FinishSendMessageKeyboard(msgId int) tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("✔️ ارسال", fmt.Sprintf("send-%d", msgId)),
-			tgbotapi.NewInlineKeyboardButtonData("❌ انصراف", fmt.Sprintf("delete-%d", msgId)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ حذف", fmt.Sprintf("delete-%d", msgId)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 بازگشت به خانه", fmt.Sprintf("home-%d", msgId)),
 		),
 	)
 }

@@ -31,6 +31,14 @@ func (l LocationCancel) GetName() string {
 func (l LocationCancel) ForceLocation(u *models.UserManager, up *tgbotapi.Update) {
 	s := strings.Split(up.Message.Text, " ")
 	if s[0] == "/cancel" || up.Message.Text == keyboards.TXT_CANCEL {
+		msgs := u.GetWaitingMsgs()
+		for _, msgId := range msgs {
+			msg := models.GetMessage(msgId, u.ContextModel)
+			if msg != nil {
+				msg.Cancel(u)
+			}
+		}
+		u.SetWaitingMsgs([]int{})
 		u.ClearCache()
 	}
 }

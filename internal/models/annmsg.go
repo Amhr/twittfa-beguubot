@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	context2 "github.com/amhr/begubot/internal/context"
 	"github.com/amhr/begubot/internal/redis"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -14,16 +13,17 @@ import (
 )
 
 type Annmsg struct {
-	Type              string
-	Data              string
-	Caption           string
-	FromId            int
-	ToId              int
-	ID                int
-	ReplyTo           int
-	Status            int
-	SenderMessageID   int
-	RecieverMessageID int
+	Type                string
+	Data                string
+	Caption             string
+	FromId              int
+	ToId                int
+	ID                  int
+	ReplyTo             int
+	Status              int
+	SenderMessageID     int
+	RecieverMessageID   int
+	BotPreviewMessageID int
 }
 
 type DBAnnmsg struct {
@@ -49,6 +49,13 @@ func (d *DBAnnmsg) ToMessage() *Annmsg {
 	}
 }
 
+func (m *Annmsg) Cancel(u *UserManager) {
+	if m.Status != 0 {
+		go u.ContextModel.Bot.Send(tgbotapi.NewDeleteMessage(u.ID64(), m.SenderMessageID))
+		go u.ContextModel.Bot.Send(tgbotapi.NewDeleteMessage(u.ID64(), m.BotPreviewMessageID))
+	}
+}
+
 func (m *Annmsg) SaveCache(c *redis.RedisCache) error {
 	key := c.Key("annmsg", strconv.Itoa(m.ID))
 	b, err := json.Marshal(m)
@@ -57,8 +64,6 @@ func (m *Annmsg) SaveCache(c *redis.RedisCache) error {
 		return err
 	}
 	c.Set(key, string(b), time.Duration(24*7)*time.Hour, context.Background())
-	fmt.Println("Saving Cache ", key)
-	fmt.Println("Value  ", m)
 	return nil
 }
 
@@ -81,12 +86,9 @@ func GetMessage(msgId int, c *context2.ModelContext) *Annmsg {
 	}
 	cacheKey := c.Redis.Key("annmsg", strconv.Itoa(msgId))
 	d := c.Redis.Get(cacheKey, "", context.Background())
-	fmt.Println(cacheKey, d)
 	if e := json.Unmarshal([]byte(d), annmsg); e == nil {
-		fmt.Println("Get Msg From Cache")
 		return annmsg
 	} else {
-		fmt.Println("Get Msg From DB")
 		dbannmsg := &DBAnnmsg{}
 		e := c.DB.Where("id=?", msgId).Take(dbannmsg)
 		if e.Error != nil {
@@ -161,6 +163,14 @@ func ConvertUpdateToAnnmsg(u *tgbotapi.Update) *Annmsg {
 		}
 	}
 
+	if u.Message.Audio != nil {
+		return &Annmsg{
+			Type:    "Audio",
+			Data:    u.Message.Audio.FileID,
+			Caption: u.Message.Caption,
+		}
+	}
+
 	if u.Message.Document != nil {
 		return &Annmsg{
 			Type:    "Document",
@@ -222,6 +232,17 @@ func SendMessage(msg *Annmsg, to int64, replyMarkup *tgbotapi.InlineKeyboardMark
 		return ph
 	case "Document":
 		ph := tgbotapi.NewDocumentShare(to, msg.Data)
+		ph.Caption = msg.Caption
+		if replyMarkup != nil {
+			ph.ReplyMarkup = replyMarkup
+		}
+		if replyTo > 0 {
+			ph.ReplyToMessageID = replyTo
+		}
+		return ph
+
+	case "Audio":
+		ph := tgbotapi.NewAudioShare(to, msg.Data)
 		ph.Caption = msg.Caption
 		if replyMarkup != nil {
 			ph.ReplyMarkup = replyMarkup

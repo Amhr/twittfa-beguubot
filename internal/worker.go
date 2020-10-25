@@ -1,11 +1,15 @@
 package internal
 
-func (b *BeguuBot) Worker(id int32) {
-	for update := range b.Updates {
+import (
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+)
+
+func (b *BeguuBot) Worker(id int32, updates chan tgbotapi.Update) {
+	for update := range updates {
 		if update.Message != nil {
-			b.HandleMessage(update)
+			b.HandleMessage(&update)
 		} else if update.CallbackQuery != nil {
-			b.HandleCallback(update)
+			b.HandleCallback(&update)
 		}
 	}
 }

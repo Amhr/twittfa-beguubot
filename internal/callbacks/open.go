@@ -24,7 +24,7 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 		return
 	}
 	// check if msg has been already opened
-	if msg.Status == 1 {
+	if msg.Status != 0 {
 		c.Bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "این پیام رو قبلا باز کرده بودید!"))
 		go c.Bot.Send(tgbotapi.NewDeleteMessage(u.ID64(), update.CallbackQuery.Message.MessageID))
 		return

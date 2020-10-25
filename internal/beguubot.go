@@ -69,8 +69,9 @@ func (b *BeguuBot) Run() {
 
 	// running workers
 	totalWorkers := b.Config.GetInt("WORKERS")
+	updatesChannel := make(chan tgbotapi.Update, 100)
 	for i := 0; i < totalWorkers; i++ {
-		go b.Worker(int32(i))
+		go b.Worker(int32(i), updatesChannel)
 	}
 
 	// fetching updates ..
@@ -84,7 +85,7 @@ func (b *BeguuBot) Run() {
 
 	for update := range updates {
 		if update.Message != nil || update.CallbackQuery != nil { // ignore any non-Message Updates
-			b.Updates <- &update
+			updatesChannel <- update
 		}
 
 	}

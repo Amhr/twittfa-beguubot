@@ -47,9 +47,10 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 
 	switch step {
 	case "1":
-
 		msg := tgbotapi.NewMessage(u.ID64(), `📩 درحال ارسال پیام ناشناس میباشد:
-هر حرفی تو دلت هست بگو. هیچ اسمی از تو ذخیره نمیشه.`)
+هر حرفی تو دلت هست بگو. هیچ اسمی از تو ذخیره نمیشه.
+
+میتونی پیام هات رو با هم فورووارد کنی یا یکی یکی ارسال کنی. قبل از ارسالشون بهت نشون میدیم پیامی که میخوای بفرستی رو و اگه تایید کردی ارسال میکنیم`)
 		if reply_to != "" {
 			msg = tgbotapi.NewMessage(u.ID64(), `📩 هر جوابی که میخوای میتونی ارسال کنی:`)
 		}
@@ -83,7 +84,20 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 			u.Error("⚠️ مشکلی پیش آمد! لینک ناشناس اشتباه میباشد", l.bot)
 			return
 		}
-		send := models.SendMessage(msg, u.ID64(), nil, 0)
+		// send multiple message
+		msg.Status = 2
+		msg.SenderMessageID = up.Message.MessageID
+		k := keyboards.FinishSendMessageKeyboard(msg.ID)
+		send := models.SendMessage(msg, u.ID64(), &k, up.Message.MessageID)
+		r, e := l.bot.Send(send)
+		if e == nil {
+			msg.BotPreviewMessageID = r.MessageID
+			msg.SaveCache(u.Cache)
+		}
+		u.AddWaitingMsg(msg.ID)
+		return
+
+		// old school send message
 		if send != nil {
 			otherUserSend := tgbotapi.NewMessage(int64(otherUser.TelegramID), `💌 یک پیام جدید دریافت کردید!
 برای نمایش پیام روی دکمه نمایش کلیک کنید.`)
@@ -95,8 +109,6 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 			l.bot.Send(done)
 
 			// finish message sending ids
-			msg.SenderMessageID = up.Message.MessageID
-			msg.SaveCache(u.Cache)
 			u.ClearCache()
 
 		} else {

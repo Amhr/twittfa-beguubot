@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	context2 "github.com/amhr/begubot/internal/context"
 	"github.com/amhr/begubot/internal/epimetheus"
 	"github.com/amhr/begubot/internal/keyboards"
 	"github.com/amhr/begubot/internal/redis"
@@ -31,19 +32,21 @@ func (u *DBUser) Update(usr *UserManager) {
 }
 
 type UserManager struct {
-	TgBotUser   *tgbotapi.User
-	Cache       *redis.RedisCache
-	DB          *gorm.DB
-	Metrics     *epimetheus.MetricsManager
-	UserMessage *UserMessage
+	TgBotUser    *tgbotapi.User
+	Cache        *redis.RedisCache
+	DB           *gorm.DB
+	Metrics      *epimetheus.MetricsManager
+	UserMessage  *UserMessage
+	ContextModel *context2.ModelContext
 }
 
-func NewUser(tgu *tgbotapi.User, c *redis.RedisCache, db *gorm.DB, m *epimetheus.MetricsManager) *UserManager {
+func NewUser(tgu *tgbotapi.User, c *redis.RedisCache, db *gorm.DB, m *epimetheus.MetricsManager, cm *context2.ModelContext) *UserManager {
 	return &UserManager{
-		TgBotUser: tgu,
-		Cache:     c,
-		DB:        db,
-		Metrics:   m,
+		TgBotUser:    tgu,
+		Cache:        c,
+		DB:           db,
+		Metrics:      m,
+		ContextModel: cm,
 	}
 }
 
@@ -64,6 +67,41 @@ func (u *UserManager) ClearCache() {
 	u.SetStep("1")
 	u.SetCache("annmsg_id", "")
 	u.SetCache("annmsg_reply", "")
+}
+
+func (u *UserManager) GetWaitingMsgs() []int {
+	d := u.GetCache("waitingmsgs")
+	var msgs []int
+	if e := json.Unmarshal([]byte(d), &msgs); e == nil {
+		return msgs
+	} else {
+		return []int{}
+	}
+}
+
+func (u *UserManager) SetWaitingMsgs(msgs []int) {
+	b, e := json.Marshal(msgs)
+	if e != nil {
+		return
+	}
+	u.SetCache("waitingmsgs", string(b))
+}
+
+func (u *UserManager) UnsetFromWaitingMsgs(msgId int) {
+	ids := u.GetWaitingMsgs()
+	nIds := make([]int, 0)
+	for _, id := range ids {
+		if id != msgId {
+			nIds = append(nIds, id)
+		}
+	}
+	u.SetWaitingMsgs(ids)
+}
+
+func (u *UserManager) AddWaitingMsg(id int) {
+	ids := u.GetWaitingMsgs()
+	ids = append(ids, id)
+	u.SetWaitingMsgs(ids)
 }
 
 func (u *UserManager) GetStep() string {

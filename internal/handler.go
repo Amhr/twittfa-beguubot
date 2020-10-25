@@ -12,7 +12,7 @@ func (b *BeguuBot) HandleMessage(u *tgbotapi.Update) {
 	t := b.Metrics.Requests.Start()
 	defer b.Metrics.Requests.Done(t, "Message", "main", "ok")
 
-	currentUser := models.NewUser(u.Message.From, b.Cache, b.DB, b.Metrics)
+	currentUser := models.NewUser(u.Message.From, b.Cache, b.DB, b.Metrics, context.NewContextModel(b.DB, b.Cache, b.Bot))
 	currentUser.Load()
 
 	for _, loc := range b.Locations {
@@ -31,7 +31,7 @@ func (b *BeguuBot) HandleMessage(u *tgbotapi.Update) {
 func (b *BeguuBot) HandleCallback(u *tgbotapi.Update) {
 	t := b.Metrics.Requests.Start()
 
-	currentUser := models.NewUser(u.CallbackQuery.From, b.Cache, b.DB, b.Metrics)
+	currentUser := models.NewUser(u.CallbackQuery.From, b.Cache, b.DB, b.Metrics, context.NewContextModel(b.DB, b.Cache, b.Bot))
 	currentUser.Load()
 
 	msg := u.CallbackQuery.Data
@@ -44,6 +44,10 @@ func (b *BeguuBot) HandleCallback(u *tgbotapi.Update) {
 		callbacks.ReplyCallback(currentUser, u, context.NewContextModel(b.DB, b.Cache, b.Bot), exp)
 	case "block":
 		callbacks.BlockCallback(currentUser, u, context.NewContextModel(b.DB, b.Cache, b.Bot), exp)
+	case "send":
+		callbacks.SendCallback(currentUser, u, context.NewContextModel(b.DB, b.Cache, b.Bot), exp)
+	case "delete":
+		callbacks.DeleteCallback(currentUser, u, context.NewContextModel(b.DB, b.Cache, b.Bot), exp)
 
 	}
 

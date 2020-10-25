@@ -41,3 +41,12 @@ func MessageDetailKeyboard(msgId int, isBlocked bool) tgbotapi.InlineKeyboardMar
 		),
 	)
 }
+
+func FinishSendMessageKeyboard(msgId int) tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✔️ ارسال", fmt.Sprintf("send-%d", msgId)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ انصراف", fmt.Sprintf("delete-%d", msgId)),
+		),
+	)
+}

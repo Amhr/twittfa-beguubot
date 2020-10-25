@@ -95,7 +95,7 @@ func (u *UserManager) UnsetFromWaitingMsgs(msgId int) {
 			nIds = append(nIds, id)
 		}
 	}
-	u.SetWaitingMsgs(ids)
+	u.SetWaitingMsgs(nIds)
 }
 
 func (u *UserManager) AddWaitingMsg(id int) {

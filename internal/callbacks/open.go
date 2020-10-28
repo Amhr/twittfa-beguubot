@@ -46,17 +46,28 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 
 	// send messages
 	var lastMessageId int
-	for _, msgIdInt := range proccableMsgs {
-		msg := models.GetMessage(msgIdInt, u.ContextModel)
-		replyTo := models.GetMessage(msg.ReplyTo, c)
-		d := keyboards.MessageDetailKeyboard(msgIdInt, u.IsBlocked(msg.FromId))
-		replyMessageId := 0
-		if replyTo.FromId == u.UserMessage.DatabaseID {
-			r, err := c.Bot.Send(models.SendMessage(replyTo, u.ID64(), nil, 0))
-			if err == nil {
-				replyMessageId = r.MessageID
+
+	replyMessageId := 0
+
+	if len(proccableMsgs) > 0 {
+		msg := models.GetMessage(proccableMsgs[0], u.ContextModel)
+		if msg.ReplyTo != 0 {
+			replyTo := models.GetMessage(msg.ReplyTo, c)
+			if replyTo.FromId == u.UserMessage.DatabaseID {
+				r, err := c.Bot.Send(models.SendMessage(replyTo, u.ID64(), nil, 0))
+				if err == nil {
+					replyMessageId = r.MessageID
+					m := tgbotapi.NewMessage(u.ID64(), `⬆️⬆️ پیام ایی که دریافت کردید در پاسخ به این پیام شما بودن.`)
+					m.ReplyToMessageID = replyMessageId
+					c.Bot.Send(m)
+				}
 			}
 		}
+	}
+
+	for _, msgIdInt := range proccableMsgs {
+		msg := models.GetMessage(msgIdInt, u.ContextModel)
+		d := keyboards.MessageDetailKeyboard(msgIdInt, u.IsBlocked(msg.FromId))
 		sendableMsg := models.SendMessage(msg, u.ID64(), &d, replyMessageId)
 		c.Bot.Send(sendableMsg)
 
@@ -73,13 +84,14 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 		}
 	}
 
-	go c.Bot.Send(tgbotapi.NewDeleteMessage(u.ID64(), update.CallbackQuery.Message.MessageID))
+	go c.Bot.Send(tgbotapi.NewEditMessageReplyMarkup(u.ID64(), update.CallbackQuery.Message.MessageID, tgbotapi.NewInlineKeyboardMarkup()))
+	go c.Bot.Send(tgbotapi.NewEditMessageText(u.ID64(), update.CallbackQuery.Message.MessageID, `📩 نمایش پیام های جدید :`))
 
 	if msgHolder.Type == "GROUP" {
 		fmt.Println(lastMessageId)
 		otherUser := u.GetUserBy("db", msgHolder.FromId)
 		fmt.Println(otherUser)
-		feedbackSendable := tgbotapi.NewMessage(int64(otherUser.TelegramID), "👀 این] چند تا پیامی که فرستاده بودی رو دید")
+		feedbackSendable := tgbotapi.NewMessage(int64(otherUser.TelegramID), "👀 این چند تا پیامی که فرستاده بودی رو دید")
 		feedbackSendable.ReplyToMessageID = lastMessageId
 		c.Bot.Send(feedbackSendable)
 	}

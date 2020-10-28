@@ -24,6 +24,8 @@ type Annmsg struct {
 	SenderMessageID     int
 	RecieverMessageID   int
 	BotPreviewMessageID int
+	Group               []int
+	GroupRaw            string
 }
 
 type DBAnnmsg struct {
@@ -32,20 +34,22 @@ type DBAnnmsg struct {
 	Data    string
 	Caption string
 	ReplyTo int
-	FromId  int `gorm:"index"`
-	ToId    int `gorm:"index"`
-	Status  int `gorm:"default:1;type:int(1)"`
+	FromId  int    `gorm:"index"`
+	ToId    int    `gorm:"index"`
+	Status  int    `gorm:"default:1;type:int(1)"`
+	Group   string `gorm:"default:null"`
 }
 
 func (d *DBAnnmsg) ToMessage() *Annmsg {
 	return &Annmsg{
-		Type:    d.Type,
-		Data:    d.Data,
-		Caption: d.Caption,
-		FromId:  d.FromId,
-		ToId:    d.ToId,
-		ID:      int(d.ID),
-		ReplyTo: d.ReplyTo,
+		Type:     d.Type,
+		Data:     d.Data,
+		Caption:  d.Caption,
+		FromId:   d.FromId,
+		ToId:     d.ToId,
+		ID:       int(d.ID),
+		ReplyTo:  d.ReplyTo,
+		GroupRaw: d.Group,
 	}
 }
 
@@ -65,6 +69,18 @@ func (m *Annmsg) SaveCache(c *redis.RedisCache) error {
 	}
 	c.Set(key, string(b), time.Duration(24*7)*time.Hour, context.Background())
 	return nil
+}
+
+func (m *Annmsg) Msgs() []int {
+	if len(m.Group) != 0 {
+		return m.Group
+	}
+	var ids []int
+	if e := json.Unmarshal([]byte(m.GroupRaw), &ids); e != nil {
+		return []int{}
+	} else {
+		return ids
+	}
 }
 
 func NewAnnmsg(t, d, c string, fromId, toId int, replyTo int) *Annmsg {
@@ -102,6 +118,7 @@ func GetMessage(msgId int, c *context2.ModelContext) *Annmsg {
 }
 
 func (annmsg *Annmsg) Save(db *gorm.DB, c *redis.RedisCache) (*DBAnnmsg, error) {
+	groupItems, _ := json.Marshal(annmsg.Group)
 	dbAnnmsg := &DBAnnmsg{
 		Type:    annmsg.Type,
 		Data:    annmsg.Data,
@@ -109,6 +126,7 @@ func (annmsg *Annmsg) Save(db *gorm.DB, c *redis.RedisCache) (*DBAnnmsg, error) 
 		FromId:  annmsg.FromId,
 		ToId:    annmsg.ToId,
 		ReplyTo: annmsg.ReplyTo,
+		Group:   string(groupItems),
 	}
 	t := db.Save(dbAnnmsg)
 	if t.Error != nil {

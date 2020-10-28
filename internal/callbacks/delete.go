@@ -34,5 +34,6 @@ func DeleteCallback(u *models.UserManager, update *tgbotapi.Update, c *context.M
 		return
 	}
 	msg.Cancel(u)
+	u.UnsetFromWaitingMsgs(msgIdInt)
 	c.Bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "انجام شد"))
 }

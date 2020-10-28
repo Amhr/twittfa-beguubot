@@ -21,6 +21,15 @@ func CancelKeyboard() tgbotapi.ReplyKeyboardMarkup {
 	)
 }
 
+func SendAnnmsgKeyboard() tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(TXT_SEND),
+			tgbotapi.NewKeyboardButton(TXT_CANCEL),
+		),
+	)
+}
+
 func ShowMessageKeyboard(msgId int) tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -45,11 +54,7 @@ func MessageDetailKeyboard(msgId int, isBlocked bool) tgbotapi.InlineKeyboardMar
 func FinishSendMessageKeyboard(msgId int) tgbotapi.InlineKeyboardMarkup {
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("✔️ ارسال", fmt.Sprintf("send-%d", msgId)),
-			tgbotapi.NewInlineKeyboardButtonData("❌ حذف", fmt.Sprintf("delete-%d", msgId)),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🔙 بازگشت به خانه", fmt.Sprintf("home-%d", msgId)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ حذف پیام", fmt.Sprintf("delete-%d", msgId)),
 		),
 	)
 }

@@ -54,16 +54,36 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 		if reply_to != "" {
 			msg = tgbotapi.NewMessage(u.ID64(), `📩 هر جوابی که میخوای میتونی ارسال کنی:`)
 		}
-		msg.ReplyMarkup = keyboards.CancelKeyboard()
+		msg.ReplyMarkup = keyboards.SendAnnmsgKeyboard()
 		go l.bot.Send(msg)
 		u.SetStep("2")
 	case "2":
+
+		if up.Message.Text == keyboards.TXT_SEND {
+			if len(u.GetWaitingMsgs()) > 0 {
+				l.FinishSendMessage(u)
+				return
+			} else {
+				c := tgbotapi.NewMessage(u.ID64(), `🚫 هنوز پیامی ارسال نکردی!`)
+				c.ReplyMarkup = keyboards.SendAnnmsgKeyboard()
+				go l.bot.Send(c)
+				return
+			}
+		}
+
 		msg := models.ConvertUpdateToAnnmsg(up)
 		if msg == nil {
 			c := tgbotapi.NewMessage(u.ID64(), `🚫 پیامی که ارسال کردید توسط ربات پشتیبانی نمیشود!
 
 لطفا یک پیام جدید ارسال کنید`)
-			c.ReplyMarkup = keyboards.CancelKeyboard()
+			c.ReplyMarkup = keyboards.SendAnnmsgKeyboard()
+			go l.bot.Send(c)
+			return
+		}
+		if len(u.GetWaitingMsgs()) > 4 {
+			c := tgbotapi.NewMessage(u.ID64(), `🚫 بیشتر از ۵ تا پیام همزمان نمیتونی ارسال کنی!
+یا روی ارسال کلیک کن یا یکی از پیام های قبلی رو حذف کن`)
+			c.ReplyMarkup = keyboards.SendAnnmsgKeyboard()
 			go l.bot.Send(c)
 			return
 		}
@@ -95,6 +115,14 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 			msg.SaveCache(u.Cache)
 		}
 		u.AddWaitingMsg(msg.ID)
+		manageMsg := tgbotapi.NewMessage(u.ID64(), fmt.Sprintf(`👍 حله، %d پیام ارسال کردی.
+اگه میخوای پیام های جدید هم اضافه کن یا اونایی که میخوای رو حذف کن. در انتها روی ارسال کلیک کن`, len(u.GetWaitingMsgs())))
+		manageMsg.ReplyMarkup = keyboards.SendAnnmsgKeyboard()
+		r, err = l.bot.Send(manageMsg)
+		if err == nil {
+			u.DelDeletableMsgs(l.bot)
+			u.AddDeletableMsg(r.MessageID)
+		}
 		return
 
 		// old school send message
@@ -131,5 +159,62 @@ func (l LocationSendAnnmsg) GetName() string {
 }
 
 func (l LocationSendAnnmsg) ForceLocation(u *models.UserManager, up *tgbotapi.Update) {
+
+}
+
+func (l LocationSendAnnmsg) FinishSendMessage(u *models.UserManager) {
+	c := u.GetCache("annmsg_id")
+	if c == "" {
+		u.Error("⚠️ مشکلی پیش آمد! لینک ناشناس اشتباه میباشد", l.bot)
+		return
+	}
+	id, _ := strconv.Atoi(c)
+	otherUser := u.GetUserBy("db", id)
+	msgIds := u.GetWaitingMsgs()
+	sendableMsg := &models.Annmsg{
+		Type:                "GROUP",
+		Data:                "",
+		Caption:             "",
+		FromId:              u.UserMessage.DatabaseID,
+		ToId:                otherUser.DatabaseID,
+		ID:                  -1,
+		ReplyTo:             -1,
+		Status:              0,
+		SenderMessageID:     0,
+		RecieverMessageID:   0,
+		BotPreviewMessageID: 0,
+		Group:               msgIds,
+	}
+	dbannmsg, err := sendableMsg.Save(u.DB, u.Cache)
+	if err != nil {
+		u.Error("مشکلی پیش آمد !!", l.bot)
+		return
+	}
+	sendableMsg.ID = int(dbannmsg.ID)
+	sendableMsg.SaveCache(u.Cache)
+
+	// message is created. sending created message
+
+	otherUserSend := tgbotapi.NewMessage(int64(otherUser.TelegramID), `💌 یک پیام جدید دریافت کردید!
+برای نمایش پیام روی دکمه نمایش کلیک کنید.`)
+	otherUserSend.ReplyMarkup = keyboards.ShowMessageKeyboard(sendableMsg.ID)
+	go l.bot.Send(otherUserSend)
+
+	msgs := sendableMsg.Msgs()
+	for _, msgId := range msgs {
+		msg := models.GetMessage(msgId, u.ContextModel)
+		l.bot.Send(tgbotapi.NewDeleteMessage(u.ID64(), msg.BotPreviewMessageID))
+		u.UnsetFromWaitingMsgs(msg.ID)
+	}
+	u.DelDeletableMsgs(l.bot)
+	sendedMsg := tgbotapi.NewMessage(u.ID64(), `✅ با موفقیت ارسال شد. اگر مخاطبتون پیام رو ببینه بهت اطلاع میدم
+
+چه کاری برات انجام بدم؟`)
+	sendedMsg.ReplyMarkup = keyboards.HomeKeyboard()
+	r, e := l.bot.Send(sendedMsg)
+	if e == nil {
+		sendableMsg.SenderMessageID = r.MessageID
+	}
+	u.ClearCache()
 
 }

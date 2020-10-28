@@ -106,10 +106,51 @@ func (u *UserManager) UnsetFromWaitingMsgs(msgId int) {
 	u.SetWaitingMsgs(nIds)
 }
 
+func (u *UserManager) AddDeletableMsg(id int) {
+	ids := u.GetDeletableMsgs()
+	ids = append(ids, id)
+	u.SetDeletableMsgs(ids)
+}
+
+func (u *UserManager) GetDeletableMsgs() []int {
+	d := u.GetCache("delmsgs")
+	var msgs []int
+	if e := json.Unmarshal([]byte(d), &msgs); e == nil {
+		return msgs
+	} else {
+		return []int{}
+	}
+}
+
+func (u *UserManager) SetDeletableMsgs(msgs []int) {
+	b, e := json.Marshal(msgs)
+	if e != nil {
+		return
+	}
+	u.SetCache("delmsgs", string(b))
+}
+
+func (u *UserManager) RemoveFromDeletableMsgs(msgId int) {
+	ids := u.GetDeletableMsgs()
+	nIds := make([]int, 0)
+	for _, id := range ids {
+		if id != msgId {
+			nIds = append(nIds, id)
+		}
+	}
+	u.SetDeletableMsgs(nIds)
+}
+
 func (u *UserManager) AddWaitingMsg(id int) {
 	ids := u.GetWaitingMsgs()
 	ids = append(ids, id)
 	u.SetWaitingMsgs(ids)
+}
+
+func (u *UserManager) DelDeletableMsgs(bot *tgbotapi.BotAPI) {
+	for _, id := range u.GetDeletableMsgs() {
+		go bot.Send(tgbotapi.NewDeleteMessage(u.ID64(), id))
+	}
 }
 
 func (u *UserManager) GetStep() string {

@@ -47,30 +47,30 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 	// send messages
 	var lastMessageId int
 
-	replyMessageId := 0
-
-	if len(proccableMsgs) > 0 {
-		msg := models.GetMessage(proccableMsgs[0], u.ContextModel)
-		if msg.ReplyTo != 0 {
-			replyTo := models.GetMessage(msg.ReplyTo, c)
-			if replyTo.FromId == u.UserMessage.DatabaseID {
-				r, err := c.Bot.Send(models.SendMessage(replyTo, u.ID64(), nil, 0))
-				if err == nil {
-					replyMessageId = r.MessageID
-					m := tgbotapi.NewMessage(u.ID64(), `⬆️⬆️ پیام ایی که دریافت کردید در پاسخ به این پیام شما بودن.`)
-					m.ReplyToMessageID = replyMessageId
-					c.Bot.Send(m)
-				}
-			}
-		}
-	}
-
 	for _, msgIdInt := range proccableMsgs {
 		msg := models.GetMessage(msgIdInt, u.ContextModel)
 		d := keyboards.MessageDetailKeyboard(msgIdInt, u.IsBlocked(msg.FromId))
+
+		replyMessageId := 0
+		replyTo := models.GetMessage(msg.ReplyTo, c)
+		if replyTo.FromId == u.UserMessage.DatabaseID {
+			if replyTo.Type == "Text" {
+				replyTo.Data = fmt.Sprintf(`پیامی که شما ارسال کردید:
+
+%s`, replyTo.Data)
+			} else {
+				replyTo.Caption = fmt.Sprintf(`پیامی که شما ارسال کردید
+
+%s`, replyTo.Caption)
+			}
+			r, err := c.Bot.Send(models.SendMessage(replyTo, u.ID64(), nil, 0))
+			if err == nil {
+				replyMessageId = r.MessageID
+			}
+		}
+
 		sendableMsg := models.SendMessage(msg, u.ID64(), &d, replyMessageId)
 		c.Bot.Send(sendableMsg)
-
 		msg.Status = 1
 		msg.SaveCache(c.Redis)
 		// send message seen feedback

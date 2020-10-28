@@ -108,7 +108,9 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 		msg.Status = 2
 		msg.SenderMessageID = up.Message.MessageID
 		k := keyboards.FinishSendMessageKeyboard(msg.ID)
-		send := models.SendMessage(msg, u.ID64(), &k, up.Message.MessageID)
+		send := tgbotapi.NewMessage(u.ID64(), `⚙️ مدیریت پیام`)
+		send.ReplyMarkup = k
+		send.ReplyToMessageID = up.Message.MessageID
 		r, e := l.bot.Send(send)
 		if e == nil {
 			msg.BotPreviewMessageID = r.MessageID
@@ -126,7 +128,7 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 		return
 
 		// old school send message
-		if send != nil {
+		if true {
 			otherUserSend := tgbotapi.NewMessage(int64(otherUser.TelegramID), `💌 یک پیام جدید دریافت کردید!
 برای نمایش پیام روی دکمه نمایش کلیک کنید.`)
 			otherUserSend.ReplyMarkup = keyboards.ShowMessageKeyboard(msg.ID)

@@ -61,7 +61,7 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 
 		if up.Message.Text == keyboards.TXT_SEND {
 			if len(u.GetWaitingMsgs()) > 0 {
-				l.FinishSendMessage(u)
+				l.FinishSendMessage(u, up)
 				return
 			} else {
 				c := tgbotapi.NewMessage(u.ID64(), `🚫 هنوز پیامی ارسال نکردی!`)
@@ -162,7 +162,7 @@ func (l LocationSendAnnmsg) ForceLocation(u *models.UserManager, up *tgbotapi.Up
 
 }
 
-func (l LocationSendAnnmsg) FinishSendMessage(u *models.UserManager) {
+func (l LocationSendAnnmsg) FinishSendMessage(u *models.UserManager, up *tgbotapi.Update) {
 	c := u.GetCache("annmsg_id")
 	if c == "" {
 		u.Error("⚠️ مشکلی پیش آمد! لینک ناشناس اشتباه میباشد", l.bot)
@@ -200,6 +200,7 @@ func (l LocationSendAnnmsg) FinishSendMessage(u *models.UserManager) {
 	otherUserSend.ReplyMarkup = keyboards.ShowMessageKeyboard(sendableMsg.ID)
 	go l.bot.Send(otherUserSend)
 
+	u.AddDeletableMsg(up.Message.MessageID)
 	msgs := sendableMsg.Msgs()
 	for _, msgId := range msgs {
 		msg := models.GetMessage(msgId, u.ContextModel)

@@ -79,7 +79,7 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 		fmt.Println(lastMessageId)
 		otherUser := u.GetUserBy("db", msgHolder.FromId)
 		fmt.Println(otherUser)
-		feedbackSendable := tgbotapi.NewMessage(int64(otherUser.TelegramID), "👀 این پیام ات رو دید.")
+		feedbackSendable := tgbotapi.NewMessage(int64(otherUser.TelegramID), "👀 این] چند تا پیامی که فرستاده بودی رو دید")
 		feedbackSendable.ReplyToMessageID = lastMessageId
 		c.Bot.Send(feedbackSendable)
 	}

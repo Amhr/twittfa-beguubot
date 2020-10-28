@@ -36,7 +36,7 @@ type DBAnnmsg struct {
 	ReplyTo int
 	FromId  int    `gorm:"index"`
 	ToId    int    `gorm:"index"`
-	Status  int    `gorm:"default:1;type:int(1)"`
+	Status  int    `gorm:"default:0;type:int(1)"`
 	Group   string `gorm:"default:null"`
 }
 

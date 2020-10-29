@@ -32,5 +32,6 @@ func (l LocationCancel) ForceLocation(u *models.UserManager, up *tgbotapi.Update
 	s := strings.Split(up.Message.Text, " ")
 	if s[0] == "/cancel" || up.Message.Text == keyboards.TXT_CANCEL {
 		u.ClearCache()
+		u.DelDeletableMsgs(l.bot)
 	}
 }

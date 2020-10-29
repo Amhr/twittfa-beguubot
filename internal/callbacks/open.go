@@ -44,6 +44,7 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 
 	c.Bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "درحال ارسال ..."))
 
+	go c.Bot.Send(tgbotapi.NewMessage(u.ID64(), `📩 نمایش پیام های جدید :`))
 	// send messages
 	var lastMessageId int
 
@@ -84,15 +85,14 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 		}
 	}
 
-	go c.Bot.Send(tgbotapi.NewEditMessageReplyMarkup(u.ID64(), update.CallbackQuery.Message.MessageID, tgbotapi.NewInlineKeyboardMarkup()))
-	go c.Bot.Send(tgbotapi.NewEditMessageText(u.ID64(), update.CallbackQuery.Message.MessageID, `📩 نمایش پیام های جدید :`))
+	go c.Bot.Send(tgbotapi.NewDeleteMessage(u.ID64(), update.CallbackQuery.Message.MessageID))
 
 	if msgHolder.Type == "GROUP" {
 		fmt.Println(lastMessageId)
 		otherUser := u.GetUserBy("db", msgHolder.FromId)
 		fmt.Println(otherUser)
 		txt := "👀 این چند تا پیامی که فرستاده بودی رو دید"
-		if len(proccableMsgs) == 0 {
+		if len(proccableMsgs) == 1 {
 			txt = "👀 این پیامی که فرستاده بودی رو دید"
 		}
 		feedbackSendable := tgbotapi.NewMessage(int64(otherUser.TelegramID), txt)

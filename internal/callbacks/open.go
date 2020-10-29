@@ -43,8 +43,7 @@ func OpenCallback(u *models.UserManager, update *tgbotapi.Update, c *context.Mod
 	}
 
 	c.Bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "درحال ارسال ..."))
-
-	go c.Bot.Send(tgbotapi.NewMessage(u.ID64(), `📩 نمایش پیام های جدید :`))
+	c.Bot.Send(tgbotapi.NewMessage(u.ID64(), `📩 نمایش پیام های جدید :`))
 	// send messages
 	var lastMessageId int
 

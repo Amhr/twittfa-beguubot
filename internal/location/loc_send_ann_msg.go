@@ -202,7 +202,13 @@ func (l LocationSendAnnmsg) FinishSendMessage(u *models.UserManager, up *tgbotap
 	otherUserSend := tgbotapi.NewMessage(int64(otherUser.TelegramID), `💌 یک پیام جدید دریافت کردید!
 برای نمایش پیام روی دکمه نمایش کلیک کنید.`)
 	otherUserSend.ReplyMarkup = keyboards.ShowMessageKeyboard(sendableMsg.ID)
-	go l.bot.Send(otherUserSend)
+	_, e := l.bot.Send(otherUserSend)
+	if e != nil {
+		u.Error(`متاسفانه این کاربر ربات رو خاموش کرده :(`, l.bot)
+		u.ClearCache()
+		u.DelDeletableMsgs(l.bot)
+		return
+	}
 
 	u.AddDeletableMsg(up.Message.MessageID)
 	msgs := sendableMsg.Msgs()

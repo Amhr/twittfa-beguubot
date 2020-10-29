@@ -204,7 +204,9 @@ func (l LocationSendAnnmsg) FinishSendMessage(u *models.UserManager, up *tgbotap
 	otherUserSend.ReplyMarkup = keyboards.ShowMessageKeyboard(sendableMsg.ID)
 	_, e := l.bot.Send(otherUserSend)
 	if e != nil {
-		u.Error(`متاسفانه این کاربر ربات رو خاموش کرده :(`, l.bot)
+		u.Error(`متاسفانه این کاربر ربات رو خاموش کرده :(
+
+چه کاری برات انجام بدم؟`, l.bot)
 		u.ClearCache()
 		u.DelDeletableMsgs(l.bot)
 		return

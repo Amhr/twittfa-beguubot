@@ -117,7 +117,7 @@ func (l LocationSendAnnmsg) Run(u *models.UserManager, up *tgbotapi.Update) {
 			msg.SaveCache(u.Cache)
 		}
 		u.AddWaitingMsg(msg.ID)
-		manageMsg := tgbotapi.NewMessage(u.ID64(), fmt.Sprintf(`👍تعداد %d  پیام آماده ارساله.
+		manageMsg := tgbotapi.NewMessage(u.ID64(), fmt.Sprintf(`👍خب  %d پیام آماده ارساله.
 ادامه پیام ها رو ارسال کن یا اگر خواستی قبلی ها رو حذف کن.
 
 در انتها فراموش نکن روی %s کلیک کنی.`, len(u.GetWaitingMsgs()), keyboards.TXT_SEND))
